@@ -1,5 +1,5 @@
-/* eslint-disable @next/next/no-img-element */
 'use client';
+import { UserService } from '@/service/UserService';
 import { Projeto } from '@/types';
 import { Button } from 'primereact/button';
 import { Column } from 'primereact/column';
@@ -12,8 +12,8 @@ import { Toolbar } from 'primereact/toolbar';
 import { classNames } from 'primereact/utils';
 import React, { useEffect, useRef, useState } from 'react';
 
-/* @todo Used 'as any' for types here. Will fix in next version due to onSelectionChange event type issue. */
 const Crud = () => {
+    const userService = new UserService();
     let emptyUser: Projeto.Usuario = {
         id: 0,
         name: '',
@@ -21,20 +21,25 @@ const Crud = () => {
         login: ''
     };
 
-    const [users, setUsers] = useState(null);
+    const [users, setUsers] = useState<Projeto.Usuario[]>([]);
     const [userDialog, setUserDialog] = useState(false);
     const [deleteUserDialog, setDeleteUserDialog] = useState(false);
     const [deleteUsersDialog, setDeleteUsersDialog] = useState(false);
     const [user, setUser] = useState<Projeto.Usuario>(emptyUser);
-    const [selectedUsers, setSelectedUsers] = useState(null);
+    const [selectedUsers, setSelectedUsers] = useState<Projeto.Usuario[]>([]);
     const [submitted, setSubmitted] = useState(false);
     const [globalFilter, setGlobalFilter] = useState('');
     const toast = useRef<Toast>(null);
     const dt = useRef<DataTable<any>>(null);
 
     useEffect(() => {
-        //ProductService.getProducts().then((data) => setUsers(data as any));
-    }, []);
+        if (users?.length == 0) {
+            userService
+                .ListAll()
+                .then((res) => setUsers(res.data))
+                .catch((e) => toast.current?.show({ severity: 'error', summary: 'Error Message', detail: e.message }));
+        }
+    }, [users,userService]);
 
     const openNew = () => {
         setUser(emptyUser);
@@ -55,38 +60,53 @@ const Crud = () => {
         setDeleteUsersDialog(false);
     };
 
-    const saveProduct = () => {
-        /*setSubmitted(true);
-
-        if (product.name.trim()) {
-            let _products = [...(products as any)];
-            let _product = { ...product };
-            if (product.id) {
-                const index = findIndexById(product.id);
-
-                _products[index] = _product;
-                toast.current?.show({
-                    severity: 'success',
-                    summary: 'Successful',
-                    detail: 'Product Updated',
-                    life: 3000
-                });
-            } else {
-                _product.id = createId();
-                _product.image = 'product-placeholder.svg';
-                _products.push(_product);
-                toast.current?.show({
-                    severity: 'success',
-                    summary: 'Successful',
-                    detail: 'Product Created',
-                    life: 3000
-                });
-            }
-
-            setUsers(_products as any);
-            setUsersDialog(false);
-            setProduct(emptyUser);
-        }*/
+    const saveUser = () => {
+        setSubmitted(true);
+        if (!user.id) {
+            userService
+                .Create(user)
+                .then(() => {
+                    setUserDialog(false);
+                    setUser(emptyUser);
+                    setUsers([]);
+                    toast.current?.show({
+                        severity: 'success',
+                        summary: 'Sucesso',
+                        detail: 'Usuario cadastrado com sucesso',
+                        life: 3000
+                    });
+                })
+                .catch((e) =>
+                    toast.current?.show({
+                        severity: 'error',
+                        summary: 'Erro!',
+                        detail: e.message,
+                        life: 3000
+                    })
+                );
+        } else {
+            userService
+                .Update(user)
+                .then((res) => {
+                    setUserDialog(false);
+                    setUser(emptyUser);
+                    setUsers([]);
+                    toast.current?.show({
+                        severity: 'success',
+                        summary: 'Sucesso',
+                        detail: 'Usuario atualizado com sucesso',
+                        life: 3000
+                    });
+                })
+                .catch((e) =>
+                    toast.current?.show({
+                        severity: 'error',
+                        summary: 'Erro!',
+                        detail: e.message,
+                        life: 3000
+                    })
+                );
+        }
     };
 
     const editUser = (user: Projeto.Usuario) => {
@@ -103,36 +123,30 @@ const Crud = () => {
         let _users = (users as any)?.filter((val: any) => val.id !== user.id);
         setUsers(_users);
         setDeleteUserDialog(false);
-        setUser(emptyUser);
-        toast.current?.show({
-            severity: 'success',
-            summary: 'Successful',
-            detail: 'Product Deleted',
-            life: 3000
-        });
+
+        userService
+            .Delete(user.id)
+            .then((res) => {
+                setUser(emptyUser);
+                setUsers([]);
+                toast.current?.show({
+                    severity: 'success',
+                    summary: 'Successful',
+                    detail: 'Usuario deletado com sucesso',
+                    life: 3000
+                });
+            })
+            .catch((e) => {
+                console.log(e);
+                toast.current?.show({
+                    severity: 'error',
+                    summary: 'Erro!',
+                    detail: e.message,
+                    life: 3000
+                });
+            });
     };
 
-    /* const findIndexById = (id: string) => {
-        let index = -1;
-        for (let i = 0; i < (users as any)?.length; i++) {
-            if ((users as any)[i].id === id) {
-                index = i;
-                break;
-            }
-        }
-
-        return index;
-    };
-
-    const createId = () => {
-        let id = '';
-        let chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
-        for (let i = 0; i < 5; i++) {
-            id += chars.charAt(Math.floor(Math.random() * chars.length));
-        }
-        return id;
-    };
-*/
     const exportCSV = () => {
         dt.current?.exportCSV();
     };
@@ -142,33 +156,32 @@ const Crud = () => {
     };
 
     const deleteSelectedUsers = () => {
-        /*let _products = (products as any)?.filter((val: any) => !(selectedProducts as any)?.includes(val));
-        setUsers(_products);
+        let _users = (users as any)?.filter((val: any) => !(selectedUsers as any)?.includes(val));
+        setUsers(_users);
+        selectedUsers.forEach((user: Projeto.Usuario) => {
+            userService
+                .Delete(user.id)
+                .then(() => setUsers([]))
+                .catch((e) => {
+                    console.log(e);
+                    setUsers([]);
+                    toast.current?.show({
+                        severity: 'error',
+                        summary: 'Erro!',
+                        detail: e.message,
+                        life: 3000
+                    });
+                });
+        });
         setDeleteUsersDialog(false);
-        setSelectedProducts(null);
+        setSelectedUsers([]);
         toast.current?.show({
             severity: 'success',
             summary: 'Successful',
-            detail: 'Products Deleted',
+            detail: 'Usuarios deletados com sucesso',
             life: 3000
-        });*/
+        });
     };
-
-    /* const onCategoryChange = (e: RadioButtonChangeEvent) => {
-        let _product = { ...product };
-        _product['category'] = e.value;
-        setProduct(_product);
-    };
-
-    
-
-    const onInputNumberChange = (e: InputNumberValueChangeEvent, name: string) => {
-        const val = e.value || 0;
-        let _product = { ...product };
-        _product[`${name}`] = val;
-
-        setProduct(_product);
-    };*/
 
     const onInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>, name: string) => {
         const val = (e.target && e.target.value) || '';
@@ -256,7 +269,7 @@ const Crud = () => {
     const userDialogFooter = (
         <>
             <Button label="Cancel" icon="pi pi-times" text onClick={hideDialog} />
-            <Button label="Save" icon="pi pi-check" text onClick={saveProduct} />
+            <Button label="Save" icon="pi pi-check" text onClick={saveUser} />
         </>
     );
     const deleteUserDialogFooter = (
@@ -350,7 +363,7 @@ const Crud = () => {
                             {submitted && !user.email && <small className="p-invalid">E-mail is required.</small>}
                         </div>
                         <div className="field">
-                            <label htmlFor="password">Passqord</label>
+                            <label htmlFor="password">Password</label>
                             <InputText
                                 id="password"
                                 value={user.password}
@@ -364,17 +377,6 @@ const Crud = () => {
                             />
                             {submitted && !user.password && <small className="p-invalid">Password is required.</small>}
                         </div>
-
-                        {/* <div className="formgrid grid">
-                            <div className="field col">
-                                <label htmlFor="price">Price</label>
-                                <InputNumber id="price" value={product.price} onValueChange={(e) => onInputNumberChange(e, 'price')} mode="currency" currency="USD" locale="en-US" />
-                            </div>
-                            <div className="field col">
-                                <label htmlFor="quantity">Quantity</label>
-                                <InputNumber id="quantity" value={product.quantity} onValueChange={(e) => onInputNumberChange(e, 'quantity')} />
-                            </div>
-                        </div> */}
                     </Dialog>
 
                     <Dialog visible={deleteUserDialog} style={{ width: '450px' }} header="Confirm" modal footer={deleteUserDialogFooter} onHide={hideDeleteUserDialog}>
@@ -382,7 +384,7 @@ const Crud = () => {
                             <i className="pi pi-exclamation-triangle mr-3" style={{ fontSize: '2rem' }} />
                             {user && (
                                 <span>
-                                    Are you sure you want to delete <b>{user.name}</b>?
+                                    Você realmente deseja deletar o usuario <b>{user.name}</b>?
                                 </span>
                             )}
                         </div>
@@ -391,7 +393,7 @@ const Crud = () => {
                     <Dialog visible={deleteUsersDialog} style={{ width: '450px' }} header="Confirm" modal footer={deleteUsersDialogFooter} onHide={hideDeleteUsersDialog}>
                         <div className="flex align-items-center justify-content-center">
                             <i className="pi pi-exclamation-triangle mr-3" style={{ fontSize: '2rem' }} />
-                            {user && <span>Are you sure you want to delete the selected products?</span>}
+                            {user && <span>Você realmente deseja deletar os usuarios selecionados?</span>}
                         </div>
                     </Dialog>
                 </div>
