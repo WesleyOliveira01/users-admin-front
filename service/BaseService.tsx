@@ -11,7 +11,7 @@ export const axiosInstance = axios.create({
 export class BaseService {
     url:string;
 
-    constructor(url:String) {
+    constructor(url:string) {
         this.url = url;
     }
 
@@ -32,6 +32,6 @@ export class BaseService {
     }
 
     public Delete(id: number) {
-        return axiosInstance.delete(`/v1/users/${id}/delete`);
+        return axiosInstance.delete(`${this.url}/${id}/delete`);
     }
 }
