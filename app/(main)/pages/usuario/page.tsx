@@ -21,7 +21,7 @@ const Usuario = () => {
         login: ''
     };
 
-    const [users, setUsers] = useState<Projeto.Usuario[]>([]);
+    const [users, setUsers] = useState<Projeto.Usuario[] | null>(null);
     const [userDialog, setUserDialog] = useState(false);
     const [deleteUserDialog, setDeleteUserDialog] = useState(false);
     const [deleteUsersDialog, setDeleteUsersDialog] = useState(false);
@@ -33,7 +33,7 @@ const Usuario = () => {
     const dt = useRef<DataTable<any>>(null);
 
     useEffect(() => {
-        if (users?.length == 0) {
+        if (!users) {
             userService
                 .ListAll()
                 .then((res) => setUsers(res.data))
@@ -68,7 +68,7 @@ const Usuario = () => {
                 .then(() => {
                     setUserDialog(false);
                     setUser(emptyUser);
-                    setUsers([]);
+                    setUsers(null);
                     toast.current?.show({
                         severity: 'success',
                         summary: 'Sucesso',
@@ -90,7 +90,7 @@ const Usuario = () => {
                 .then((res) => {
                     setUserDialog(false);
                     setUser(emptyUser);
-                    setUsers([]);
+                    setUsers(null);
                     toast.current?.show({
                         severity: 'success',
                         summary: 'Sucesso',
@@ -128,7 +128,7 @@ const Usuario = () => {
             .Delete(user.id)
             .then((res) => {
                 setUser(emptyUser);
-                setUsers([]);
+                setUsers(null);
                 toast.current?.show({
                     severity: 'success',
                     summary: 'Successful',
@@ -164,7 +164,7 @@ const Usuario = () => {
                 .then(() => setUsers([]))
                 .catch((e) => {
                     console.log(e);
-                    setUsers([]);
+                    setUsers(null);
                     toast.current?.show({
                         severity: 'error',
                         summary: 'Erro!',

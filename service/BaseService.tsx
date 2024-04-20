@@ -23,12 +23,12 @@ export class BaseService {
         return axiosInstance.get(`${this.url}/${id}`);
     }
 
-    public Create(user: any) {
-        return axiosInstance.post(this.url, user);
+    public Create(item: any) {
+        return axiosInstance.post(this.url, item);
     }
 
-    public Update(user: any) {
-        return axiosInstance.put(`${this.url}/${user.id}`, user);
+    public Update(item: any) {
+        return axiosInstance.put(`${this.url}/${item.id}`, item);
     }
 
     public Delete(id: number) {

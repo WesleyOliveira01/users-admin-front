@@ -13,4 +13,9 @@ import { name } from './../.next/server/app/(main)/page';
         name:string;
         key:string;
     }
+
+    type Perfil = {
+        id?:number;
+        descricao:string;
+    }
 }
