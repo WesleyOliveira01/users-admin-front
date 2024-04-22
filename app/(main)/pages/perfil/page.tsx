@@ -96,13 +96,14 @@ const Recurso = () => {
                         life: 3000
                     });
                 })
-                .catch((e) =>
+                .catch((e) =>{
+                    console.log(e.message)
                     toast.current?.show({
                         severity: 'error',
                         summary: 'Erro!',
                         detail: e.message,
                         life: 3000
-                    })
+                    })}
                 );
         }
     };
@@ -135,6 +136,7 @@ const Recurso = () => {
                 });
             })
             .catch((e) => {
+                console.log(e.message)
                 toast.current?.show({
                     severity: 'error',
                     summary: 'Erro!',
